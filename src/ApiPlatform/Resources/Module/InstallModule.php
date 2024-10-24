@@ -23,42 +23,37 @@ declare(strict_types=1);
 namespace PrestaShop\Module\APIResources\ApiPlatform\Resources\Module;
 
 use ApiPlatform\Metadata\ApiResource;
-use PrestaShop\PrestaShop\Core\Domain\Module\Command\BulkToggleModuleStatusCommand;
-use PrestaShop\PrestaShop\Core\Domain\Module\Exception\ModuleNotFoundException;
-use PrestaShop\PrestaShop\Core\Domain\Module\Command\BulkUninstallModuleCommand;
+use PrestaShop\PrestaShop\Core\Domain\Module\Command\UpdateModuleStatusCommand;
+use PrestaShop\PrestaShop\Core\Domain\Module\Command\InstallModuleCommand;
+use PrestaShop\PrestaShop\Core\Domain\Module\Query\GetModuleInfos;
+use PrestaShopBundle\ApiPlatform\Metadata\CQRSGet;
 use PrestaShopBundle\ApiPlatform\Metadata\CQRSUpdate;
+use PrestaShopBundle\ApiPlatform\Metadata\CQRSCreate;
+use PrestaShopBundle\ApiPlatform\Metadata\PaginatedList;
 
 #[ApiResource(
     operations: [
-        new CQRSUpdate(
-            uriTemplate: '/modules/toggle-status',
-            output: false,
-            CQRSCommand: BulkToggleModuleStatusCommand::class,
-            scopes: [
-                'module_write',
-            ],
-            CQRSCommandMapping: [
-                '[enabled]' => '[expectedStatus]',
-            ],
-        ),
-        new CQRSUpdate(
-            uriTemplate: '/modules/uninstall',
-            output: false,
-            CQRSCommand: BulkUninstallModuleCommand::class,
+        new CQRSCreate(
+            uriTemplate: '/module/{technicalName}/install',
+            CQRSCommand: InstallModuleCommand::class,
+            CQRSQuery: GetModuleInfos::class,
             scopes: [
                 'module_write',
             ],
         ),
     ],
-    exceptionToStatus: [ModuleNotFoundException::class => 404],
 )]
-class BulkModules
+class InstallModule
 {
-    /**
-     * @var string[]
-     */
-    public array $modules;
+    public int $moduleId;
+
+    public string $technicalName;
+
+    public string $version;
 
     public bool $enabled;
-    public bool $deleteFile;
+
+    public bool $installed;
+
+    public string $source;
 }
