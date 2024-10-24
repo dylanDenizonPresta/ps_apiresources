@@ -81,6 +81,10 @@ class ModuleEndpointTest extends ApiTestCase
             'POST',
             '/module/{technicalName}/install',
         ];
+        yield 'update module' => [
+            'POST',
+            '/module/{technicalName}/update',
+        ];
     }
 
     public function testModuleNotFound(): void
@@ -421,7 +425,7 @@ class ModuleEndpointTest extends ApiTestCase
     {
         $module = array(
             'technicalName' => 'ps_featuredproducts',
-            'source' => 'https://github.com/PrestaShop/ps_featuredproducts/releases/download/v2.1.5/ps_featuredproducts.zip',
+            'source' => 'https://github.com/PrestaShop/ps_featuredproducts/releases/download/v2.1.4/ps_featuredproducts.zip',
         );
 
         $bearerToken = $this->getBearerToken(['module_write']);
@@ -447,7 +451,76 @@ class ModuleEndpointTest extends ApiTestCase
         // Check response from status update request
         $this->assertEquals($expectedModuleInfos, $decodedResponse);
     }
+    
+    /**
+     * @depends testInstallModuleFromZip
+     */
+    public function testUpdateModuleFromZip(): void
+    {
+        $module = array(
+            'technicalName' => 'test_cqrs_command',
+            'source' => _PS_MODULE_DIR_ . 'test_cqrs_command_1.0.1.zip',
+            'version' => '1.0.1'
 
+        );
+        $bearerToken = $this->getBearerToken(['module_write']);
+        $response = static::createClient()->request('POST', sprintf('/module/%s/update', $module['technicalName']), [
+            'auth_bearer' => $bearerToken,
+            'json' => [
+                'source' => $module['source'],
+            ],
+        ]);
+
+        self::assertResponseStatusCodeSame(201);
+        $decodedResponse = json_decode($response->getContent(), true);
+        $this->assertNotFalse($decodedResponse);
+
+        // Check response from status update request
+        $expectedModuleInfos = [
+            'technicalName' => $module['technicalName'],
+            'version' => $module['version'],
+            'enabled' => true,
+            'installed' => true,
+        ];
+
+        // Check response from status update request
+        $this->assertEquals($expectedModuleInfos, $decodedResponse);
+    }
+
+    /**
+     * @depends testInstallModuleFromUrl
+     */
+    public function testUpdateModuleFromUrl(): void
+    {
+        $module = array(
+            'technicalName' => 'ps_featuredproducts',
+            'source' => 'https://github.com/PrestaShop/ps_featuredproducts/releases/download/v2.1.5/ps_featuredproducts.zip',
+            'version' => '2.1.5'
+        );
+
+        $bearerToken = $this->getBearerToken(['module_write']);
+        $response = static::createClient()->request('POST', sprintf('/module/%s/update', $module['technicalName']), [
+            'auth_bearer' => $bearerToken,
+            'json' => [
+                'source' => $module['source'],
+            ],
+        ]);
+
+        self::assertResponseStatusCodeSame(200);
+        $decodedResponse = json_decode($response->getContent(), true);
+        $this->assertNotFalse($decodedResponse);
+
+        // Check response from status update request
+        $expectedModuleInfos = [
+            'technicalName' => $module['technicalName'],
+            'version' => $module['version'],
+            'enabled' => true,
+            'installed' => true,
+        ];
+
+        // Check response from status update request
+        $this->assertEquals($expectedModuleInfos, $decodedResponse);
+    }
     private function getModuleInfos(string $technicalName): array
     {
         $bearerToken = $this->getBearerToken(['module_read']);
